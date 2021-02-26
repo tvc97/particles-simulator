@@ -28,8 +28,6 @@
         world.push([...Array(ELEMENT)].map(item => 0))
       }
 
-      world[0][ELEMENT >> 1] = 1
-
       const getMousePos = (canvas, evt) => {
         var rect = canvas.getBoundingClientRect();
         return {
@@ -66,16 +64,16 @@
 
 
       const update = () => {
-        for(let y = ELEMENT - 1; y >= 0; y--) {
-          for(let x = 0; x < ELEMENT; x++) {
-            if(world[y][x]) {
-              if(y + 1 < ELEMENT && !world[y + 1][x]) {
-                world[y][x] = 0
-                world[y + 1][x] = 1
-              }
-            }
-          }
-        }
+        // for(let y = ELEMENT - 1; y >= 0; y--) {
+        //   for(let x = 0; x < ELEMENT; x++) {
+        //     if(world[y][x]) {
+        //       if(y + 1 < ELEMENT && !world[y + 1][x]) {
+        //         world[y][x] = 0
+        //         world[y + 1][x] = 1
+        //       }
+        //     }
+        //   }
+        // }
       }
 
       const move = () => {
@@ -94,16 +92,16 @@
           cv.stroke();
         }
 
-        // for(let y = 0; y < ELEMENT; y++) {
-        //   for(let x = 0; x < ELEMENT; x++) {
+        for(let y = 0; y < ELEMENT; y++) {
+          for(let x = 0; x < ELEMENT; x++) {
 
-        //     if(world[y][x]) {
-        //       cv.beginPath();
-        //       cv.fillStyle = "white"
-        //       cv.fillRect(x * EDGE, y * EDGE, EDGE, EDGE);
-        //     }
-        //   }
-        // }
+            if(world[y][x]) {
+              cv.beginPath();
+              cv.fillStyle = "white"
+              cv.fillRect(x * EDGE, y * EDGE, EDGE, EDGE);
+            }
+          }
+        }
       }
 
       move();
