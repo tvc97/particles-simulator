@@ -4,14 +4,62 @@
     <style>
       *{ padding: 0; margin: 0 }
       body { background-color: black; }
-      #container { display: flex; width: 100vw; height: 100vh; align-items: center; justify-content: center; }
+      #container { display: flex; width: 100vw; height: 100vh; align-items: center; justify-content: center; flex-direction: column; }
       canvas{ border: 1px solid #eee; }
+      button { padding: 10px 20px; margin: 10px }
+      .hbtn { color: red }
     </style>
+    <script>
+      const TYPES = {
+        BLOCK: 1,
+        SAND: 2
+      }
+
+      const MOVES = {
+        [TYPES.BLOCK]: [
+          { dx: 0, dy: 1 }
+        ],
+        [TYPES.SAND]: [
+          { dx: 0, dy: 1 },
+          { dx: -1, dy: 1 },
+          { dx: 1, dy: 1 },
+        ]
+      }
+
+      const NAMES = {
+        [TYPES.BLOCK]: 'GẠCH',
+        [TYPES.SAND]: 'CÁT'
+      }
+
+      const COLORS = {
+        [TYPES.BLOCK]: 'white',
+        [TYPES.SAND]: '#ffffc6'
+      }
+
+      window.type = TYPES.BLOCK
+
+      const resetButtonClass = () => {
+        const buttons = document.getElementsByTagName('button')
+        for(const btn of buttons) {
+          btn.className = ''
+        }
+      }
+    </script>
   </head>
   <body>
     <div id="container">
       <canvas width="1024px" height="1024px">
       </canvas>
+      <br />
+      <div style="display: flex;">
+        <script>
+          for(const t of Object.values(TYPES)) {
+            document.writeln(`
+              <button onclick="resetButtonClass(); this.className = 'hbtn'; window.type = ${t}" style="background-color: ${COLORS[t]};">${NAMES[t]}</button>
+            `)
+          }
+        </script>
+      </div>
     </div>
     <script>
       const SIZE = 1024
@@ -36,16 +84,24 @@
         };
       }
 
+      const isAvailable = (x, y) => {
+        return x >= 0 && y >= 0 && x < ELEMENT && y < ELEMENT && !world[y][x]
+      }
+
+      const swap = (x0, y0, x1, y1) => {
+        const tmp = world[y0][x0]
+        world[y0][x0] = world[y1][x1]
+        world[y1][x1] = tmp
+      }
+
       const handleAdd = (e) => {
         const pos = getMousePos(canvas, e)
 
         const x = Math.floor(pos.x / EDGE)
         const y = Math.floor(pos.y / EDGE)
 
-        console.log(e, e.x, e.y, x, y)
-
         if(!world[y][x]) {
-          world[y][x] = 1
+          world[y][x] = type
         }
       }
 
@@ -62,14 +118,18 @@
         isMouseDown = false
       }
 
-
       const update = () => {
         for(let y = ELEMENT - 1; y >= 0; y--) {
           for(let x = 0; x < ELEMENT; x++) {
             if(world[y][x]) {
-              if(y + 1 < ELEMENT && !world[y + 1][x]) {
-                world[y][x] = 0
-                world[y + 1][x] = 1
+              for(const move of MOVES[world[y][x]]) {
+                const ty = y + move.dy
+                const tx = x + move.dx
+
+                if(isAvailable(tx, ty)) {
+                  swap(x, y, tx, ty)
+                  break
+                }
               }
             }
           }
@@ -97,7 +157,7 @@
 
             if(world[y][x]) {
               cv.beginPath();
-              cv.fillStyle = "white"
+              cv.fillStyle = COLORS[world[y][x]]
               cv.fillRect(x * EDGE, y * EDGE, EDGE, EDGE);
             }
           }
