@@ -14,7 +14,9 @@
         BLOCK: 1,
         SAND: 2,
         WATER: 3,
-        WOOD: 4
+        WOOD: 4,
+        FIRE: 5,
+        // SMOKE: 6
       }
 
       const MOVES = {
@@ -26,6 +28,11 @@
           { dx: -1, dy: 1 },
           { dx: 1, dy: 1 },
         ],
+        [TYPES.FIRE]: [
+          { dx: 0, dy: 1 },
+          { dx: -1, dy: 1 },
+          { dx: 1, dy: 1 },
+        ],
         [TYPES.WATER]: [
           { dx: 0, dy: 1 },
           { dx: -1, dy: 1 },
@@ -33,22 +40,33 @@
           { dx: -1, dy: 0 },
           { dx: 1, dy: 0 },
         ],
-        [TYPES.WOOD]: []
+        [TYPES.WOOD]: [],
+        [TYPES.SMOKE]: [
+          { dx: 0, dy: -1 },
+          { dx: -1, dy: -1 },
+          { dx: 1, dy: -1 },
+        ]
       }
 
       const NAMES = {
         [TYPES.BLOCK]: 'GẠCH',
         [TYPES.SAND]: 'CÁT',
         [TYPES.WATER]: 'NƯỚC',
-        [TYPES.WOOD]: 'GỖ'
+        [TYPES.WOOD]: 'GỖ',
+        [TYPES.FIRE]: 'LỬA',
+        [TYPES.SMOKE]: 'KHÓI'
       }
 
       const COLORS = {
         [TYPES.BLOCK]: 'white',
         [TYPES.SAND]: '#ffffc6',
         [TYPES.WATER]: '#0863de',
-        [TYPES.WOOD]: '#7e470b'
+        [TYPES.WOOD]: '#7e470b',
+        [TYPES.FIRE]: '#e84025',
+        [TYPES.SMOKE]: '#333'
       }
+
+      const FIRE_COLORS = ['#f2ba00', '#f77100', '#f46100', '#d03302', '#b02103', '#7c1000', '#500', '#300', '#100', '#000']
 
       window.type = TYPES.BLOCK
 
@@ -103,8 +121,17 @@
       }
 
       const isAvailable = (x, y) => {
-        return isInBound(x, y) && !world[y][x]
+        return isInBound(x, y) && !world[y][x]?.type
       }
+
+      const getType = el => {
+        return el?.type
+      }
+
+      const create = type => ({
+        type,
+        life: 0
+      })
 
       const swap = (x0, y0, x1, y1) => {
         const tmp = world[y0][x0]
@@ -118,8 +145,8 @@
         const x = Math.floor(pos.x / EDGE)
         const y = Math.floor(pos.y / EDGE)
 
-        if(!world[y][x]) {
-          world[y][x] = type
+        if(!world[y][x]?.type) {
+          world[y][x] = create(type)
         }
         if(type === TYPES.WOOD) {
           for(let dx = -1; dx < 2; dx++)
@@ -127,7 +154,7 @@
               const ty = y + dy
               const tx = x + dx
               if(isInBound(tx, ty) && !world[ty][tx]) {
-                world[ty][tx] = type
+                world[ty][tx] = create(type)
               }
             }
         }
@@ -147,8 +174,10 @@
       }
 
       const updatePixel = (x, y) => {
-        if(world[y][x]) {
-          for(const move of MOVES[world[y][x]]) {
+        if(world[y][x]?.type) {
+          const currentType = getType(world[y][x])
+
+          for(const move of MOVES[currentType]) {
             const ty = y + move.dy
             const tx = x + move.dx
 
@@ -156,12 +185,16 @@
               swap(x, y, tx, ty)
               break
             } else if(isInBound(tx, ty)) {
-              if(world[ty][tx] === TYPES.WATER && (
-                world[y][x] === TYPES.BLOCK || world[y][x] === TYPES.SAND
+              if(world[ty][tx]?.type === TYPES.WATER && (
+                currentType === TYPES.BLOCK || currentType === TYPES.SAND
               )) {
                 swap(x, y, tx, ty)
                 break
               }
+            }
+
+            if(!isInBound(tx, ty) && currentType === TYPES.SMOKE) {
+              currentType = 0
             }
           }
         }
@@ -170,11 +203,23 @@
       const update = () => {
         for(let y = ELEMENT - 1; y >= 0; y--) {
           for(let x = 0; x < ELEMENT; x++) {
-            updatePixel(x, y)
+            if(world[y][x]?.type !== TYPES.SMOKE)
+              updatePixel(x, y)
           }
-
           for(let x = ELEMENT - 1; x >= 0; x--) {
-            updatePixel(x, y)
+            if(world[y][x]?.type !== TYPES.SMOKE)
+              updatePixel(x, y)
+          }
+        }
+
+        for(let y = 0; y < ELEMENT; y++) {
+          for(let x = 0; x < ELEMENT; x++) {
+            if(world[y][x]?.type === TYPES.SMOKE)
+              updatePixel(x, y)
+          }
+          for(let x = ELEMENT - 1; x >= 0; x--) {
+            if(world[y][x]?.type === TYPES.SMOKE)
+              updatePixel(x, y)
           }
         }
       }
@@ -186,10 +231,19 @@
 
         for(let y = 0; y < ELEMENT; y++) {
           for(let x = 0; x < ELEMENT; x++) {
-
-            if(world[y][x]) {
+            const currentEl = world[y][x]
+            if(currentEl?.type) {
+              currentEl.life++
               cv.beginPath();
-              cv.fillStyle = COLORS[world[y][x]]
+              if(currentEl.type === TYPES.FIRE) {
+                const color = FIRE_COLORS?.[Math.floor(currentEl.life / 10)] || '#000'
+                if(color === '#000') {
+                  world[y][x] = null
+                }
+                cv.fillStyle = color
+              } else {
+                cv.fillStyle = COLORS[currentEl.type]
+              }
               cv.fillRect(x * EDGE, y * EDGE, EDGE, EDGE);
             }
           }
