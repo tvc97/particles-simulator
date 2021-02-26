@@ -16,7 +16,8 @@
         WATER: 3,
         WOOD: 4,
         FIRE: 5,
-        SMOKE: 6
+        SMOKE: 6,
+        STEAM: 7
       }
 
       const MOVES = {
@@ -45,6 +46,11 @@
           { dx: 0, dy: -1 },
           { dx: -1, dy: -1 },
           { dx: 1, dy: -1 },
+        ],
+        [TYPES.STEAM]: [
+          { dx: 0, dy: -1 },
+          { dx: -1, dy: -1 },
+          { dx: 1, dy: -1 },
         ]
       }
 
@@ -54,7 +60,8 @@
         [TYPES.WATER]: 'NƯỚC',
         [TYPES.WOOD]: 'GỖ',
         [TYPES.FIRE]: 'LỬA',
-        [TYPES.SMOKE]: 'KHÓI'
+        [TYPES.SMOKE]: 'KHÓI',
+        [TYPES.STEAM]: 'HƠI NƯỚC'
       }
 
       const COLORS = {
@@ -63,7 +70,8 @@
         [TYPES.WATER]: '#0863de',
         [TYPES.WOOD]: '#7e470b',
         [TYPES.FIRE]: '#e84025',
-        [TYPES.SMOKE]: '#555'
+        [TYPES.SMOKE]: '#555',
+        [TYPES.STEAM]: '#ccc'
       }
 
       const FIRE_COLORS = ['#f2ba00', '#f77100', '#f46100', '#d03302', '#b02103', '#7c1000', '#500', '#300', '#100', '#000']
@@ -130,7 +138,8 @@
 
       const create = type => ({
         type,
-        life: 0
+        life: 0,
+        damage: 0
       })
 
       const swap = (x0, y0, x1, y1) => {
@@ -142,22 +151,31 @@
       const handleAdd = (e) => {
         const pos = getMousePos(canvas, e)
 
-        const x = Math.floor(pos.x / EDGE)
-        const y = Math.floor(pos.y / EDGE)
+        const x0 = Math.floor(pos.x / EDGE)
+        const y0 = Math.floor(pos.y / EDGE)
 
-        if(!world[y][x]?.type) {
-          world[y][x] = create(type)
-        }
-        if(type === TYPES.WOOD) {
-          for(let dx = -1; dx < 2; dx++)
-            for(let dy = -1; dy < 2; dy++) {
-              const ty = y + dy
-              const tx = x + dx
-              if(isInBound(tx, ty) && !world[ty][tx]) {
-                world[ty][tx] = create(type)
-              }
+        let p = 0;
+        let q = 0;
+
+        // for(p = -2; p < 3; p += Math.ceil(Math.random() * 2)) {
+        //   for(q = -(Math.ceil(Math.random() * 4)); p < 3; p += Math.ceil(Math.random() * 2)) {
+            const x = x0 + p
+            const y = y0 + q
+            if(!world[y][x]?.type) {
+              world[y][x] = create(type)
             }
-        }
+            if(type === TYPES.WOOD) {
+              for(let dx = -1; dx < 2; dx++)
+                for(let dy = -1; dy < 2; dy++) {
+                  const ty = y + dy
+                  const tx = x + dx
+                  if(isInBound(tx, ty) && !world[ty][tx]) {
+                    world[ty][tx] = create(type)
+                  }
+                }
+            }
+        //   }
+        // }
       }
 
       canvas.onmousemove = e => {
@@ -180,8 +198,8 @@
           for(const move of MOVES[currentType]) {
             const random = Math.floor(Math.random() * 3) - 1
             const random2 = -(Math.floor(Math.random() * 2) + 1)
-            const dx = currentType === TYPES.SMOKE ? random : move.dx
-            const dy = currentType === TYPES.SMOKE ? random2 : move.dy
+            const dx = currentType === TYPES.SMOKE || currentType === TYPES.STEAM ? random : move.dx
+            const dy = currentType === TYPES.SMOKE || currentType === TYPES.STEAM ? random2 : move.dy
 
             const ty = y + dy
             const tx = x + dx
@@ -198,7 +216,7 @@
               }
             }
 
-            if(!isInBound(tx, ty) && currentType === TYPES.SMOKE) {
+            if(!isInBound(tx, ty) && (currentType === TYPES.SMOKE || currentType === TYPES.STEAM)) {
               world[y][x] = 0
             }
           }
@@ -208,22 +226,22 @@
       const update = () => {
         for(let y = ELEMENT - 1; y >= 0; y--) {
           for(let x = 0; x < ELEMENT; x++) {
-            if(world[y][x]?.type !== TYPES.SMOKE)
+            if(world[y][x]?.type !== TYPES.SMOKE && world[y][x]?.type !== TYPES.STEAM)
               updatePixel(x, y)
           }
           for(let x = ELEMENT - 1; x >= 0; x--) {
-            if(world[y][x]?.type !== TYPES.SMOKE)
+            if(world[y][x]?.type !== TYPES.SMOKE && world[y][x]?.type !== TYPES.STEAM)
               updatePixel(x, y)
           }
         }
 
         for(let y = 0; y < ELEMENT; y++) {
           for(let x = 0; x < ELEMENT; x++) {
-            if(world[y][x]?.type === TYPES.SMOKE)
+            if(world[y][x]?.type === TYPES.SMOKE || world[y][x]?.type === TYPES.STEAM)
               updatePixel(x, y)
           }
           for(let x = ELEMENT - 1; x >= 0; x--) {
-            if(world[y][x]?.type === TYPES.SMOKE)
+            if(world[y][x]?.type === TYPES.SMOKE || world[y][x]?.type === TYPES.STEAM)
               updatePixel(x, y)
           }
         }
@@ -245,6 +263,23 @@
                 if(currentEl.life % 20 === 0 && isAvailable(x, y - 1)) {
                   world[y - 1][x] = create(TYPES.SMOKE)
                 }
+                if(isInBound(x, y + 1) && world[y + 1][x]?.type === TYPES.WOOD) {
+                  world[y + 1][x].damage++
+                  if(world[y + 1][x].damage > 50) {
+                    world[y + 1][x] = create(TYPES.FIRE)
+                    world[y][x].life = 0
+                  }
+                }
+                if(isInBound(x, y + 1) && world[y + 1][x]?.type === TYPES.WATER) {
+                  world[y + 1][x].damage++
+                  if(world[y + 1][x].damage > 20) {
+                    world[y + 1][x] = null
+                    world[y][x].life += 20
+                  }
+                  if(isAvailable(x, y - 1)) {
+                    world[y - 1][x] = create(TYPES.STEAM)
+                  }
+                }
                 if(color === '#000') {
                   world[y][x] = null
                 }
@@ -253,6 +288,9 @@
                 cv.fillStyle = COLORS[currentEl.type]
               }
               if(currentEl.type === TYPES.SMOKE && currentEl.life > 150) {
+                world[y][x] = null
+              }
+              if(currentEl.type === TYPES.STEAM && currentEl.life > 250) {
                 world[y][x] = null
               }
               cv.fillRect(x * EDGE, y * EDGE, EDGE, EDGE);
