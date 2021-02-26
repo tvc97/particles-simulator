@@ -12,7 +12,8 @@
     <script>
       const TYPES = {
         BLOCK: 1,
-        SAND: 2
+        SAND: 2,
+        WATER: 3
       }
 
       const MOVES = {
@@ -23,17 +24,26 @@
           { dx: 0, dy: 1 },
           { dx: -1, dy: 1 },
           { dx: 1, dy: 1 },
+        ],
+        [TYPES.WATER]: [
+          { dx: 0, dy: 1 },
+          { dx: -1, dy: 1 },
+          { dx: 1, dy: 1 },
+          { dx: -1, dy: 0 },
+          { dx: 1, dy: 0 },
         ]
       }
 
       const NAMES = {
         [TYPES.BLOCK]: 'GẠCH',
-        [TYPES.SAND]: 'CÁT'
+        [TYPES.SAND]: 'CÁT',
+        [TYPES.WATER]: 'NƯỚC'
       }
 
       const COLORS = {
         [TYPES.BLOCK]: 'white',
-        [TYPES.SAND]: '#ffffc6'
+        [TYPES.SAND]: '#ffffc6',
+        [TYPES.WATER]: '#0863de'
       }
 
       window.type = TYPES.BLOCK
