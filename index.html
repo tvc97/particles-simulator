@@ -94,8 +94,12 @@
         };
       }
 
+      const isInBound = (x, y) => {
+        return x >= 0 && y >= 0 && x < ELEMENT && y < ELEMENT
+      }
+
       const isAvailable = (x, y) => {
-        return x >= 0 && y >= 0 && x < ELEMENT && y < ELEMENT && !world[y][x]
+        return isInBound(x, y) && !world[y][x]
       }
 
       const swap = (x0, y0, x1, y1) => {
@@ -137,6 +141,13 @@
             if(isAvailable(tx, ty)) {
               swap(x, y, tx, ty)
               break
+            } else if(isInBound(tx, ty)) {
+              if(world[ty][tx] === TYPES.WATER && (
+                world[y][x] === TYPES.BLOCK || world[y][x] === TYPES.SAND
+              )) {
+                swap(x, y, tx, ty)
+                break
+              }
             }
           }
         }
