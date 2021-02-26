@@ -1,0 +1,112 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <style>
+      *{ padding: 0; margin: 0 }
+      body { background-color: black; }
+      #container { display: flex; width: 100vw; height: 100vh; align-items: center; justify-content: center; }
+      canvas{ border: 1px solid #eee; }
+    </style>
+  </head>
+  <body>
+    <div id="container">
+      <canvas width="1024px" height="1024px">
+      </canvas>
+    </div>
+    <script>
+      const SIZE = 1024
+      const ELEMENT = 32
+      const EDGE = SIZE / ELEMENT
+
+      const canvas = document.querySelector("canvas"); 
+      const cv = canvas.getContext('2d');
+
+      let isMouseDown = false
+
+      const world = []
+      for(let i = 0; i < ELEMENT; i++) {
+        world.push([...Array(ELEMENT)].map(item => 0))
+      }
+
+      world[0][ELEMENT >> 1] = 1
+
+      const getMousePos = (canvas, evt) => {
+        var rect = canvas.getBoundingClientRect();
+        return {
+          x: evt.clientX - rect.left,
+          y: evt.clientY - rect.top
+        };
+      }
+
+      const handleAdd = (e) => {
+        const pos = getMousePos(canvas, e)
+
+        const x = Math.floor(pos.x / EDGE)
+        const y = Math.floor(pos.y / EDGE)
+
+        console.log(e, e.x, e.y, x, y)
+
+        if(!world[y][x]) {
+          world[y][x] = 1
+        }
+      }
+
+      canvas.onmousemove = e => {
+        if(isMouseDown) {
+          handleAdd(e)
+        }
+      }
+      canvas.onmousedown = e => {
+        handleAdd(e)
+        isMouseDown = true
+      }
+      canvas.onmouseup = e => {
+        isMouseDown = false
+      }
+
+
+      const update = () => {
+        for(let y = ELEMENT - 1; y >= 0; y--) {
+          for(let x = 0; x < ELEMENT; x++) {
+            if(world[y][x]) {
+              if(y + 1 < ELEMENT && !world[y + 1][x]) {
+                world[y][x] = 0
+                world[y + 1][x] = 1
+              }
+            }
+          }
+        }
+      }
+
+      const move = () => {
+        requestAnimationFrame(move);
+        update()
+        cv.clearRect(0, 0, SIZE, SIZE);
+
+        cv.strokeStyle = "white"
+        for(let y = 0; y < ELEMENT; y++) {
+          cv.moveTo(0, y * EDGE);
+          cv.lineTo(SIZE, y * EDGE);
+          cv.stroke();
+
+          cv.moveTo(y * EDGE, 0 );
+          cv.lineTo(y * EDGE, SIZE);
+          cv.stroke();
+        }
+
+        // for(let y = 0; y < ELEMENT; y++) {
+        //   for(let x = 0; x < ELEMENT; x++) {
+
+        //     if(world[y][x]) {
+        //       cv.beginPath();
+        //       cv.fillStyle = "white"
+        //       cv.fillRect(x * EDGE, y * EDGE, EDGE, EDGE);
+        //     }
+        //   }
+        // }
+      }
+
+      move();
+    </script>
+  </body>
+</html>
