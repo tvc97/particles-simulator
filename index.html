@@ -73,7 +73,7 @@
     </div>
     <script>
       const SIZE = 1024
-      const ELEMENT = 32
+      const ELEMENT = 64
       const EDGE = SIZE / ELEMENT
 
       const canvas = document.querySelector("canvas"); 
@@ -128,20 +128,28 @@
         isMouseDown = false
       }
 
+      const updatePixel = (x, y) => {
+        if(world[y][x]) {
+          for(const move of MOVES[world[y][x]]) {
+            const ty = y + move.dy
+            const tx = x + move.dx
+
+            if(isAvailable(tx, ty)) {
+              swap(x, y, tx, ty)
+              break
+            }
+          }
+        }
+      }
+
       const update = () => {
         for(let y = ELEMENT - 1; y >= 0; y--) {
           for(let x = 0; x < ELEMENT; x++) {
-            if(world[y][x]) {
-              for(const move of MOVES[world[y][x]]) {
-                const ty = y + move.dy
-                const tx = x + move.dx
+            updatePixel(x, y)
+          }
 
-                if(isAvailable(tx, ty)) {
-                  swap(x, y, tx, ty)
-                  break
-                }
-              }
-            }
+          for(let x = ELEMENT - 1; x >= 0; x--) {
+            updatePixel(x, y)
           }
         }
       }
@@ -150,17 +158,6 @@
         requestAnimationFrame(move);
         update()
         cv.clearRect(0, 0, SIZE, SIZE);
-
-        cv.strokeStyle = "white"
-        for(let y = 0; y < ELEMENT; y++) {
-          cv.moveTo(0, y * EDGE);
-          cv.lineTo(SIZE, y * EDGE);
-          cv.stroke();
-
-          cv.moveTo(y * EDGE, 0 );
-          cv.lineTo(y * EDGE, SIZE);
-          cv.stroke();
-        }
 
         for(let y = 0; y < ELEMENT; y++) {
           for(let x = 0; x < ELEMENT; x++) {
